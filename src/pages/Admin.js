@@ -1,5 +1,8 @@
-// src/pages/Admin.js - Complete with Modal System
+// src/pages/Admin.js - Complete Admin Dashboard with Production API URL
 import { flightService, authService } from '../services/api.js';
+
+// Production API URL - Update this to your Render backend URL
+const API_BASE_URL = 'https://skylink-backend-7fff.onrender.com/api';
 
 const Admin = {
     async render() {
@@ -7,22 +10,36 @@ const Admin = {
             return `
                 <div class="container">
                     <div class="auth-container">
-                        <h2>Access Denied</h2>
-                        <p>You do not have permission to access this page.</p>
+                        <div class="auth-header">
+                            <h2>Access Denied</h2>
+                            <p>You do not have permission to access this page.</p>
+                        </div>
                         <button onclick="window.App.navigateTo('home')" class="btn-primary">Go Home</button>
                     </div>
                 </div>
             `;
         }
         
+        // Show loading state
+        let content = `
+            <div class="admin-dashboard">
+                <div class="container">
+                    <h1>Admin Dashboard</h1>
+                    <div class="loading-spinner" style="text-align: center; padding: 3rem;"></div>
+                </div>
+            </div>
+        `;
+        
         try {
             // Fetch all data
-            const flights = await this.getFlights();
-            const routes = await this.getRoutes();
-            const users = await this.getUsers();
-            const bookings = await this.getBookings();
-            const userStats = await this.getUserStats();
-            const bookingStats = await this.getBookingStats();
+            const [flights, routes, users, bookings, userStats, bookingStats] = await Promise.all([
+                this.getFlights(),
+                this.getRoutes(),
+                this.getUsers(),
+                this.getBookings(),
+                this.getUserStats(),
+                this.getBookingStats()
+            ]);
             
             // Safely extract numbers
             const totalFlights = Array.isArray(flights) ? flights.length : 0;
@@ -32,7 +49,7 @@ const Admin = {
             const totalRevenue = parseFloat(bookingStats?.total_revenue || 0);
             const confirmedBookings = bookingStats?.confirmed_bookings || 0;
             
-            return `
+            content = `
                 <div class="admin-dashboard">
                     <div class="container">
                         <h1>Admin Dashboard</h1>
@@ -101,7 +118,15 @@ const Admin = {
                                 <div class="table-container">
                                     <table class="data-table">
                                         <thead>
-                                            <tr><th>Flight #</th><th>Airline</th><th>Route</th><th>Departure</th><th>Seats</th><th>Price</th><th>Actions</th></tr>
+                                            <tr>
+                                                <th>Flight #</th>
+                                                <th>Airline</th>
+                                                <th>Route</th>
+                                                <th>Departure</th>
+                                                <th>Seats</th>
+                                                <th>Price</th>
+                                                <th>Actions</th>
+                                            </tr>
                                         </thead>
                                         <tbody>
                                             ${flights.map(flight => `
@@ -130,7 +155,15 @@ const Admin = {
                                 </div>
                                 <div class="table-container">
                                     <table class="data-table">
-                                        <thead><tr><th>ID</th><th>Route</th><th>Distance (km)</th><th>Base Price</th><th>Actions</th></tr></thead>
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Route</th>
+                                                <th>Distance (km)</th>
+                                                <th>Base Price</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
                                         <tbody>
                                             ${routes.map(route => `
                                                 <tr>
@@ -156,7 +189,15 @@ const Admin = {
                                 </div>
                                 <div class="table-container">
                                     <table class="data-table">
-                                        <thead><tr><th>ID</th><th>Username</th><th>Email</th><th>Role</th><th>Actions</th></tr></thead>
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Username</th>
+                                                <th>Email</th>
+                                                <th>Role</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
                                         <tbody>
                                             ${users.map(user => `
                                                 <tr>
@@ -184,7 +225,16 @@ const Admin = {
                                 <h2>All Bookings</h2>
                                 <div class="table-container">
                                     <table class="data-table">
-                                        <thead><tr><th>Reference</th><th>User</th><th>Flight</th><th>Price</th><th>Status</th><th>Date</th></tr></thead>
+                                        <thead>
+                                            <tr>
+                                                <th>Reference</th>
+                                                <th>User</th>
+                                                <th>Flight</th>
+                                                <th>Price</th>
+                                                <th>Status</th>
+                                                <th>Date</th>
+                                            </tr>
+                                        </thead>
                                         <tbody>
                                             ${bookings.map(booking => `
                                                 <tr>
@@ -209,10 +259,23 @@ const Admin = {
                 ${this.renderAddRouteModal()}
                 ${this.renderAddUserModal()}
             `;
+            
         } catch (error) {
             console.error('Error loading admin panel:', error);
-            return `<div class="container"><div class="auth-container"><h2>Error</h2><p>${error.message}</p><button onclick="window.location.reload()" class="btn-primary">Retry</button></div></div>`;
+            content = `
+                <div class="container">
+                    <div class="auth-container">
+                        <div class="auth-header">
+                            <h2>Error Loading Dashboard</h2>
+                            <p>${error.message}</p>
+                        </div>
+                        <button onclick="window.location.reload()" class="btn-primary">Retry</button>
+                    </div>
+                </div>
+            `;
         }
+        
+        return content;
     },
     
     renderAddFlightModal(routes) {
@@ -228,7 +291,7 @@ const Admin = {
                             <div class="form-grid">
                                 <div class="form-control">
                                     <label>Flight Number *</label>
-                                    <input type="text" id="flight_number" required>
+                                    <input type="text" id="flight_number" required placeholder="e.g., AA123">
                                 </div>
                                 <div class="form-control">
                                     <label>Route *</label>
@@ -239,7 +302,7 @@ const Admin = {
                                 </div>
                                 <div class="form-control">
                                     <label>Airline *</label>
-                                    <input type="text" id="airline" required>
+                                    <input type="text" id="airline" required placeholder="Airline name">
                                 </div>
                                 <div class="form-control">
                                     <label>Departure Time *</label>
@@ -251,11 +314,11 @@ const Admin = {
                                 </div>
                                 <div class="form-control">
                                     <label>Total Seats *</label>
-                                    <input type="number" id="total_seats" required min="1">
+                                    <input type="number" id="total_seats" required min="1" placeholder="e.g., 180">
                                 </div>
                                 <div class="form-control">
                                     <label>Available Seats</label>
-                                    <input type="number" id="available_seats">
+                                    <input type="number" id="available_seats" placeholder="Leave empty = Total Seats">
                                 </div>
                                 <div class="form-control">
                                     <label>Price Multiplier</label>
@@ -294,11 +357,11 @@ const Admin = {
                                 </div>
                                 <div class="form-control">
                                     <label>Distance (km) *</label>
-                                    <input type="number" id="distance_km" required>
+                                    <input type="number" id="distance_km" required placeholder="e.g., 3980">
                                 </div>
                                 <div class="form-control">
                                     <label>Base Price *</label>
-                                    <input type="number" step="0.01" id="base_price" required>
+                                    <input type="number" step="0.01" id="base_price" required placeholder="e.g., 450.00">
                                 </div>
                             </div>
                         </form>
@@ -362,12 +425,79 @@ const Admin = {
         `;
     },
     
-    async getFlights() { try { return await flightService.getAllFlights(); } catch (error) { return []; } },
-    async getRoutes() { try { const token = authService.getToken(); const response = await axios.get('http://localhost:5000/api/routes', { headers: { Authorization: `Bearer ${token}` } }); return response.data || []; } catch (error) { return []; } },
-    async getUsers() { try { const token = authService.getToken(); const response = await axios.get('http://localhost:5000/api/users', { headers: { Authorization: `Bearer ${token}` } }); return response.data || []; } catch (error) { return []; } },
-    async getBookings() { try { const token = authService.getToken(); const response = await axios.get('http://localhost:5000/api/bookings/all', { headers: { Authorization: `Bearer ${token}` } }); return response.data || []; } catch (error) { return []; } },
-    async getUserStats() { try { const token = authService.getToken(); const response = await axios.get('http://localhost:5000/api/users/stats', { headers: { Authorization: `Bearer ${token}` } }); return response.data || {}; } catch (error) { return {}; } },
-    async getBookingStats() { try { const token = authService.getToken(); const response = await axios.get('http://localhost:5000/api/bookings/stats/all', { headers: { Authorization: `Bearer ${token}` } }); return response.data || {}; } catch (error) { return {}; } },
+    async getFlights() { 
+        try { 
+            return await flightService.getAllFlights(); 
+        } catch (error) { 
+            console.error('Error fetching flights:', error);
+            return []; 
+        } 
+    },
+    
+    async getRoutes() { 
+        try { 
+            const token = authService.getToken(); 
+            const response = await axios.get(`${API_BASE_URL}/routes`, { 
+                headers: { Authorization: `Bearer ${token}` } 
+            }); 
+            return response.data || []; 
+        } catch (error) { 
+            console.error('Error fetching routes:', error);
+            return []; 
+        } 
+    },
+    
+    async getUsers() { 
+        try { 
+            const token = authService.getToken(); 
+            const response = await axios.get(`${API_BASE_URL}/users`, { 
+                headers: { Authorization: `Bearer ${token}` } 
+            }); 
+            return response.data || []; 
+        } catch (error) { 
+            console.error('Error fetching users:', error);
+            return []; 
+        } 
+    },
+    
+    async getBookings() { 
+        try { 
+            const token = authService.getToken(); 
+            const response = await axios.get(`${API_BASE_URL}/bookings/all`, { 
+                headers: { Authorization: `Bearer ${token}` } 
+            }); 
+            return response.data || []; 
+        } catch (error) { 
+            console.error('Error fetching bookings:', error);
+            return []; 
+        } 
+    },
+    
+    async getUserStats() { 
+        try { 
+            const token = authService.getToken(); 
+            const response = await axios.get(`${API_BASE_URL}/users/stats`, { 
+                headers: { Authorization: `Bearer ${token}` } 
+            }); 
+            return response.data || {}; 
+        } catch (error) { 
+            console.error('Error fetching user stats:', error);
+            return {}; 
+        } 
+    },
+    
+    async getBookingStats() { 
+        try { 
+            const token = authService.getToken(); 
+            const response = await axios.get(`${API_BASE_URL}/bookings/stats/all`, { 
+                headers: { Authorization: `Bearer ${token}` } 
+            }); 
+            return response.data || {}; 
+        } catch (error) { 
+            console.error('Error fetching booking stats:', error);
+            return {}; 
+        } 
+    },
     
     attachEvents() {
         // Tab switching
@@ -376,18 +506,37 @@ const Admin = {
                 const tab = btn.getAttribute('data-tab');
                 document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                document.getElementById(`${tab}-tab`).classList.add('active');
+                const tabContent = document.getElementById(`${tab}-tab`);
+                if (tabContent) tabContent.classList.add('active');
                 btn.classList.add('active');
             });
         });
         
         // Modal functions
-        window.openAddFlightModal = () => document.getElementById('addFlightModal').style.display = 'block';
-        window.closeAddFlightModal = () => document.getElementById('addFlightModal').style.display = 'none';
-        window.openAddRouteModal = () => document.getElementById('addRouteModal').style.display = 'block';
-        window.closeAddRouteModal = () => document.getElementById('addRouteModal').style.display = 'none';
-        window.openAddUserModal = () => document.getElementById('addUserModal').style.display = 'block';
-        window.closeAddUserModal = () => document.getElementById('addUserModal').style.display = 'none';
+        window.openAddFlightModal = () => {
+            const modal = document.getElementById('addFlightModal');
+            if (modal) modal.style.display = 'block';
+        };
+        window.closeAddFlightModal = () => {
+            const modal = document.getElementById('addFlightModal');
+            if (modal) modal.style.display = 'none';
+        };
+        window.openAddRouteModal = () => {
+            const modal = document.getElementById('addRouteModal');
+            if (modal) modal.style.display = 'block';
+        };
+        window.closeAddRouteModal = () => {
+            const modal = document.getElementById('addRouteModal');
+            if (modal) modal.style.display = 'none';
+        };
+        window.openAddUserModal = () => {
+            const modal = document.getElementById('addUserModal');
+            if (modal) modal.style.display = 'block';
+        };
+        window.closeAddUserModal = () => {
+            const modal = document.getElementById('addUserModal');
+            if (modal) modal.style.display = 'none';
+        };
         
         // Close modals when clicking outside
         window.onclick = (event) => {
@@ -398,63 +547,162 @@ const Admin = {
         
         // Submit functions
         window.submitAddFlight = async () => {
+            const submitBtn = event.target;
+            const originalText = submitBtn.textContent;
+            
             const flightData = {
-                flight_number: document.getElementById('flight_number').value,
-                route_id: parseInt(document.getElementById('route_id').value),
-                airline: document.getElementById('airline').value,
-                departure_time: document.getElementById('departure_time').value,
-                arrival_time: document.getElementById('arrival_time').value,
-                total_seats: parseInt(document.getElementById('total_seats').value),
-                available_seats: document.getElementById('available_seats').value ? parseInt(document.getElementById('available_seats').value) : parseInt(document.getElementById('total_seats').value),
-                price_multiplier: parseFloat(document.getElementById('price_multiplier').value) || 1.0
+                flight_number: document.getElementById('flight_number')?.value,
+                route_id: parseInt(document.getElementById('route_id')?.value),
+                airline: document.getElementById('airline')?.value,
+                departure_time: document.getElementById('departure_time')?.value,
+                arrival_time: document.getElementById('arrival_time')?.value,
+                total_seats: parseInt(document.getElementById('total_seats')?.value),
+                available_seats: document.getElementById('available_seats')?.value ? 
+                    parseInt(document.getElementById('available_seats').value) : 
+                    parseInt(document.getElementById('total_seats').value),
+                price_multiplier: parseFloat(document.getElementById('price_multiplier')?.value) || 1.0
             };
+            
+            // Validate
+            if (!flightData.flight_number || !flightData.route_id || !flightData.airline || 
+                !flightData.departure_time || !flightData.arrival_time || !flightData.total_seats) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
             try {
+                submitBtn.textContent = 'Creating...';
+                submitBtn.disabled = true;
+                
                 await flightService.createFlight(flightData);
-                alert('✅ Flight added!');
+                alert('✅ Flight added successfully!');
                 window.closeAddFlightModal();
                 window.location.reload();
-            } catch (error) { alert('❌ Failed: ' + (error.response?.data?.message || error.message)); }
+            } catch (error) { 
+                alert('❌ Failed: ' + (error.response?.data?.message || error.message));
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
         };
         
         window.submitAddRoute = async () => {
             const token = authService.getToken();
             const routeData = {
-                origin_airport_id: parseInt(document.getElementById('origin_airport_id').value),
-                destination_airport_id: parseInt(document.getElementById('destination_airport_id').value),
-                distance_km: parseFloat(document.getElementById('distance_km').value),
-                base_price: parseFloat(document.getElementById('base_price').value)
+                origin_airport_id: parseInt(document.getElementById('origin_airport_id')?.value),
+                destination_airport_id: parseInt(document.getElementById('destination_airport_id')?.value),
+                distance_km: parseFloat(document.getElementById('distance_km')?.value),
+                base_price: parseFloat(document.getElementById('base_price')?.value)
             };
+            
+            if (!routeData.origin_airport_id || !routeData.destination_airport_id || 
+                !routeData.distance_km || !routeData.base_price) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
             try {
-                await axios.post('http://localhost:5000/api/routes', routeData, { headers: { Authorization: `Bearer ${token}` } });
-                alert('✅ Route added!');
+                await axios.post(`${API_BASE_URL}/routes`, routeData, { 
+                    headers: { Authorization: `Bearer ${token}` } 
+                });
+                alert('✅ Route added successfully!');
                 window.closeAddRouteModal();
                 window.location.reload();
-            } catch (error) { alert('❌ Failed: ' + (error.response?.data?.message || error.message)); }
+            } catch (error) { 
+                alert('❌ Failed: ' + (error.response?.data?.message || error.message));
+            }
         };
         
         window.submitAddUser = async () => {
             const token = authService.getToken();
             const userData = {
-                username: document.getElementById('username').value,
-                email: document.getElementById('email').value,
-                full_name: document.getElementById('full_name').value,
-                phone: document.getElementById('phone').value,
-                password: document.getElementById('password').value,
-                role: document.getElementById('role').value
+                username: document.getElementById('username')?.value,
+                email: document.getElementById('email')?.value,
+                full_name: document.getElementById('full_name')?.value,
+                phone: document.getElementById('phone')?.value,
+                password: document.getElementById('password')?.value,
+                role: document.getElementById('role')?.value
             };
+            
+            if (!userData.username || !userData.email || !userData.full_name || !userData.password) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            if (userData.password.length < 6) {
+                alert('Password must be at least 6 characters');
+                return;
+            }
+            
             try {
-                await axios.post('http://localhost:5000/api/users', userData, { headers: { Authorization: `Bearer ${token}` } });
-                alert('✅ User added!');
+                await axios.post(`${API_BASE_URL}/users`, userData, { 
+                    headers: { Authorization: `Bearer ${token}` } 
+                });
+                alert('✅ User added successfully!');
                 window.closeAddUserModal();
                 window.location.reload();
-            } catch (error) { alert('❌ Failed: ' + (error.response?.data?.message || error.message)); }
+            } catch (error) { 
+                alert('❌ Failed: ' + (error.response?.data?.message || error.message));
+            }
         };
         
         // Delete functions
-        window.deleteFlight = async (id) => { if (confirm('Delete flight?')) { const token = authService.getToken(); await axios.delete(`http://localhost:5000/api/flights/${id}`, { headers: { Authorization: `Bearer ${token}` } }); window.location.reload(); } };
-        window.deleteRoute = async (id) => { if (confirm('Delete route?')) { const token = authService.getToken(); await axios.delete(`http://localhost:5000/api/routes/${id}`, { headers: { Authorization: `Bearer ${token}` } }); window.location.reload(); } };
-        window.deleteUser = async (id) => { if (confirm('Delete user?')) { const token = authService.getToken(); await axios.delete(`http://localhost:5000/api/users/${id}`, { headers: { Authorization: `Bearer ${token}` } }); window.location.reload(); } };
-        window.updateUserRole = async (id, role) => { const token = authService.getToken(); await axios.put(`http://localhost:5000/api/users/${id}/role`, { role }, { headers: { Authorization: `Bearer ${token}` } }); alert('Role updated!'); window.location.reload(); };
+        window.deleteFlight = async (id) => { 
+            if (confirm('Are you sure you want to delete this flight?')) { 
+                const token = authService.getToken(); 
+                try {
+                    await axios.delete(`${API_BASE_URL}/flights/${id}`, { 
+                        headers: { Authorization: `Bearer ${token}` } 
+                    });
+                    alert('✅ Flight deleted successfully!');
+                    window.location.reload();
+                } catch (error) {
+                    alert('❌ Failed to delete flight: ' + (error.response?.data?.message || error.message));
+                }
+            } 
+        };
+        
+        window.deleteRoute = async (id) => { 
+            if (confirm('Are you sure you want to delete this route? This will also delete associated flights.')) { 
+                const token = authService.getToken(); 
+                try {
+                    await axios.delete(`${API_BASE_URL}/routes/${id}`, { 
+                        headers: { Authorization: `Bearer ${token}` } 
+                    });
+                    alert('✅ Route deleted successfully!');
+                    window.location.reload();
+                } catch (error) {
+                    alert('❌ Failed to delete route: ' + (error.response?.data?.message || error.message));
+                }
+            } 
+        };
+        
+        window.deleteUser = async (id) => { 
+            if (confirm('Are you sure you want to delete this user? This will also delete their bookings.')) { 
+                const token = authService.getToken(); 
+                try {
+                    await axios.delete(`${API_BASE_URL}/users/${id}`, { 
+                        headers: { Authorization: `Bearer ${token}` } 
+                    });
+                    alert('✅ User deleted successfully!');
+                    window.location.reload();
+                } catch (error) {
+                    alert('❌ Failed to delete user: ' + (error.response?.data?.message || error.message));
+                }
+            } 
+        };
+        
+        window.updateUserRole = async (id, role) => { 
+            const token = authService.getToken(); 
+            try {
+                await axios.put(`${API_BASE_URL}/users/${id}/role`, { role }, { 
+                    headers: { Authorization: `Bearer ${token}` } 
+                });
+                alert('✅ User role updated successfully!');
+                window.location.reload();
+            } catch (error) {
+                alert('❌ Failed to update role: ' + (error.response?.data?.message || error.message));
+            }
+        };
     }
 };
 

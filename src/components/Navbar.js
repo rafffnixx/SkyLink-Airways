@@ -6,10 +6,11 @@ const Navbar = {
         return `
             <nav class="navbar">
                 <div class="nav-container">
-                    <div class="logo" style="cursor: pointer;" onclick="window.App.navigateTo('home')">
+                    <div class="logo" onclick="window.App.navigateTo('home')">
                         SkyLink <span>Airways</span>
                     </div>
-                    <div class="nav-links">
+                    <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+                    <div class="nav-links" id="navLinks">
                         <a href="javascript:void(0)" onclick="window.App.navigateTo('home')">Home</a>
                         <a href="javascript:void(0)" onclick="window.App.navigateTo('flights')">Flights</a>
                         ${isLoggedIn ? `<a href="javascript:void(0)" onclick="window.App.navigateTo('my-bookings')">My Bookings</a>` : ''}
@@ -25,24 +26,22 @@ const Navbar = {
     },
     
     attachEvents() {
+        // Mobile menu toggle
+        const mobileBtn = document.getElementById('mobileMenuBtn');
+        const navLinks = document.getElementById('navLinks');
+        
+        if (mobileBtn && navLinks) {
+            mobileBtn.addEventListener('click', () => {
+                navLinks.classList.toggle('active');
+            });
+        }
+        
+        // Logout button
         const logoutBtn = document.getElementById('logout-btn');
         if (logoutBtn) {
-            // Remove any existing listeners to avoid duplicates
-            const newLogoutBtn = logoutBtn.cloneNode(true);
-            logoutBtn.parentNode.replaceChild(newLogoutBtn, logoutBtn);
-            
-            newLogoutBtn.addEventListener('click', (e) => {
+            logoutBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                e.stopPropagation();
-                if (window.authService && typeof window.authService.logout === 'function') {
-                    window.authService.logout();
-                } else {
-                    console.error('authService.logout is not defined');
-                    // Fallback logout
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    window.location.href = '/';
-                }
+                window.authService.logout();
             });
         }
     }

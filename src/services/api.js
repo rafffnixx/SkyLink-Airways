@@ -1,4 +1,22 @@
-const API_URL = 'http://localhost:5000/api';
+// API URL Configuration - Browser compatible
+// For production (Render) or local development
+
+// Detect environment based on current hostname
+const getApiUrl = () => {
+    // Check if we're in production (Vercel domain)
+    if (window.location.hostname !== 'localhost' && 
+        window.location.hostname !== '127.0.0.1') {
+        // Production - Use your Render backend URL
+        return 'https://skylink-backend-7fff.onrender.com/api';
+    }
+    // Local development
+    return 'http://localhost:5000/api';
+};
+
+const API_URL = getApiUrl();
+
+// Optional: Log the API URL for debugging
+console.log('API_URL:', API_URL);
 
 // Auth Service
 const authService = {

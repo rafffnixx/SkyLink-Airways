@@ -7,9 +7,11 @@ const Booking = {
             return `
                 <div class="container">
                     <div class="auth-container">
-                        <h2>No Flight Selected</h2>
-                        <p>Please select a flight to book.</p>
-                        <button onclick="window.App.navigateTo('flights')" class="btn-primary">Search Flights</button>
+                        <div class="auth-header">
+                            <h2>No Flight Selected</h2>
+                            <p>Please select a flight to continue with your booking.</p>
+                        </div>
+                        <button onclick="window.App.navigateTo('flights')" class="btn-primary">Browse Flights</button>
                     </div>
                 </div>
             `;
@@ -20,83 +22,133 @@ const Booking = {
             const currentUser = authService.getCurrentUser();
             
             const price = flight.base_price * flight.price_multiplier;
+            const departureDate = new Date(flight.departure_time);
+            const arrivalDate = new Date(flight.arrival_time);
             
             return `
                 <div class="container">
-                    <h1>Complete Your Booking</h1>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
-                        <div>
-                            <div class="flight-card">
-                                <div class="flight-card-content">
-                                    <h3>Flight Details</h3>
-                                    <div class="flight-route">
-                                        <span class="airport-code">${flight.origin_code}</span>
-                                        <span>✈️</span>
-                                        <span class="airport-code">${flight.dest_code}</span>
+                    <div class="booking-page">
+                        <h1>Complete Your Booking</h1>
+                        
+                        <div class="booking-layout">
+                            <!-- Flight Details Section -->
+                            <div class="booking-flight-details">
+                                <div class="section-card">
+                                    <div class="section-header">
+                                        <span class="section-icon">✈️</span>
+                                        <h3>Flight Details</h3>
                                     </div>
-                                    <div class="flight-details">
-                                        <div>
-                                            <strong>Airline</strong><br>
-                                            ${flight.airline}
+                                    <div class="flight-summary">
+                                        <div class="flight-route-large">
+                                            <div class="route-cities">
+                                                <div class="city">
+                                                    <span class="city-code">${flight.origin_code}</span>
+                                                    <span class="city-name">${flight.origin_city || ''}</span>
+                                                </div>
+                                                <div class="route-arrow">→</div>
+                                                <div class="city">
+                                                    <span class="city-code">${flight.dest_code}</span>
+                                                    <span class="city-name">${flight.dest_city || ''}</span>
+                                                </div>
+                                            </div>
+                                            <div class="flight-meta">
+                                                <div class="meta-item">
+                                                    <span class="meta-label">Airline</span>
+                                                    <span class="meta-value">${flight.airline}</span>
+                                                </div>
+                                                <div class="meta-item">
+                                                    <span class="meta-label">Flight Number</span>
+                                                    <span class="meta-value">${flight.flight_number}</span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <strong>Flight Number</strong><br>
-                                            ${flight.flight_number}
+                                        
+                                        <div class="flight-schedule">
+                                            <div class="schedule-item">
+                                                <span class="schedule-label">Departure</span>
+                                                <span class="schedule-date">${departureDate.toLocaleDateString()}</span>
+                                                <span class="schedule-time">${departureDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                            </div>
+                                            <div class="schedule-divider"></div>
+                                            <div class="schedule-item">
+                                                <span class="schedule-label">Arrival</span>
+                                                <span class="schedule-date">${arrivalDate.toLocaleDateString()}</span>
+                                                <span class="schedule-time">${arrivalDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <strong>Departure</strong><br>
-                                            ${new Date(flight.departure_time).toLocaleString()}
-                                        </div>
-                                        <div>
-                                            <strong>Arrival</strong><br>
-                                            ${new Date(flight.arrival_time).toLocaleString()}
-                                        </div>
-                                        <div>
-                                            <strong>Available Seats</strong><br>
-                                            ${flight.available_seats}
-                                        </div>
-                                        <div>
-                                            <strong>Price per Seat</strong><br>
-                                            <span class="price">$${price.toFixed(2)}</span>
+                                        
+                                        <div class="flight-availability">
+                                            <span class="availability-label">Available Seats</span>
+                                            <span class="availability-value ${flight.available_seats < 10 ? 'low' : ''}">${flight.available_seats} seats left</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <div>
-                            <div class="auth-container" style="margin-top: 0;">
-                                <h3>Passenger Information</h3>
-                                <form id="booking-form">
-                                    <div class="form-control">
-                                        <label>Full Name</label>
-                                        <input type="text" id="passenger-name" value="${currentUser.full_name}" required>
+                            
+                            <!-- Passenger Information Section -->
+                            <div class="booking-passenger-form">
+                                <div class="section-card">
+                                    <div class="section-header">
+                                        <span class="section-icon">👤</span>
+                                        <h3>Passenger Information</h3>
                                     </div>
-                                    <div class="form-control">
-                                        <label>Age</label>
-                                        <input type="number" id="passenger-age" required>
-                                    </div>
-                                    <div class="form-control">
-                                        <label>Passport Number</label>
-                                        <input type="text" id="passport-number" required>
-                                    </div>
-                                    <div class="form-control">
-                                        <label>Number of Passengers</label>
-                                        <select id="passenger-count">
-                                            <option value="1">1 Passenger</option>
-                                            <option value="2">2 Passengers</option>
-                                            <option value="3">3 Passengers</option>
-                                            <option value="4">4 Passengers</option>
-                                            <option value="5">5 Passengers</option>
-                                        </select>
-                                    </div>
-                                    <div id="extra-passengers"></div>
-                                    <div class="form-control">
-                                        <label>Total Price</label>
-                                        <div id="total-price" style="font-size: 1.5rem; font-weight: bold; color: #1D4ED8;">$${price.toFixed(2)}</div>
-                                    </div>
-                                    <button type="submit" class="btn-primary">Confirm Booking</button>
-                                </form>
+                                    
+                                    <form id="booking-form">
+                                        <div class="passenger-card" id="passenger-1">
+                                            <div class="passenger-header">
+                                                <span class="passenger-number">Passenger 1</span>
+                                                <span class="passenger-badge">Main Traveler</span>
+                                            </div>
+                                            <div class="form-row">
+                                                <div class="form-control">
+                                                    <label>Full Name *</label>
+                                                    <input type="text" id="passenger-name" value="${currentUser.full_name}" required>
+                                                </div>
+                                                <div class="form-control">
+                                                    <label>Age *</label>
+                                                    <input type="number" id="passenger-age" min="0" max="120" required>
+                                                </div>
+                                                <div class="form-control">
+                                                    <label>Passport Number *</label>
+                                                    <input type="text" id="passport-number" placeholder="Enter passport number" required>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div id="extra-passengers"></div>
+                                        
+                                        <div class="form-control">
+                                            <label>Number of Passengers</label>
+                                            <select id="passenger-count" class="passenger-count-select">
+                                                <option value="1">1 Passenger</option>
+                                                <option value="2">2 Passengers</option>
+                                                <option value="3">3 Passengers</option>
+                                                <option value="4">4 Passengers</option>
+                                                <option value="5">5 Passengers</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="price-summary">
+                                            <div class="price-row">
+                                                <span>Price per seat</span>
+                                                <span>$${price.toFixed(2)}</span>
+                                            </div>
+                                            <div class="price-row">
+                                                <span>Number of passengers</span>
+                                                <span id="passenger-count-display">1</span>
+                                            </div>
+                                            <div class="price-row total">
+                                                <span>Total Price</span>
+                                                <span id="total-price">$${price.toFixed(2)}</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="booking-actions">
+                                            <button type="button" onclick="window.App.navigateTo('flights')" class="btn-secondary">Cancel</button>
+                                            <button type="submit" class="btn-primary" id="confirm-booking-btn">Confirm Booking</button>
+                                        </div>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -107,8 +159,10 @@ const Booking = {
             return `
                 <div class="container">
                     <div class="auth-container">
-                        <h2>Error</h2>
-                        <p>Unable to load flight details. Please try again.</p>
+                        <div class="auth-header">
+                            <h2>Error Loading Flight</h2>
+                            <p>Unable to load flight details. Please try again.</p>
+                        </div>
                         <button onclick="window.App.navigateTo('flights')" class="btn-primary">Back to Flights</button>
                     </div>
                 </div>
@@ -120,8 +174,10 @@ const Booking = {
         const passengerCount = document.getElementById('passenger-count');
         if (passengerCount) {
             passengerCount.addEventListener('change', (e) => {
-                this.updatePassengerFields(parseInt(e.target.value));
+                const count = parseInt(e.target.value);
+                this.updatePassengerFields(count);
                 this.updateTotalPrice();
+                document.getElementById('passenger-count-display').textContent = count;
             });
         }
         
@@ -134,6 +190,24 @@ const Booking = {
         }
         
         this.updateTotalPrice();
+        
+        // Add input validation for passport number
+        const passportInput = document.getElementById('passport-number');
+        if (passportInput) {
+            passportInput.addEventListener('input', (e) => {
+                e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            });
+        }
+        
+        // Age validation
+        const ageInput = document.getElementById('passenger-age');
+        if (ageInput) {
+            ageInput.addEventListener('input', (e) => {
+                let value = parseInt(e.target.value);
+                if (value < 0) e.target.value = 0;
+                if (value > 120) e.target.value = 120;
+            });
+        }
     },
     
     updatePassengerFields(count) {
@@ -143,80 +217,128 @@ const Booking = {
         let html = '';
         for (let i = 2; i <= count; i++) {
             html += `
-                <div class="passenger-fields" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #DDE3EC;">
-                    <h4>Passenger ${i}</h4>
-                    <div class="form-control">
-                        <label>Full Name</label>
-                        <input type="text" id="passenger-name-${i}" required>
+                <div class="passenger-card" id="passenger-${i}">
+                    <div class="passenger-header">
+                        <span class="passenger-number">Passenger ${i}</span>
                     </div>
-                    <div class="form-control">
-                        <label>Age</label>
-                        <input type="number" id="passenger-age-${i}" required>
-                    </div>
-                    <div class="form-control">
-                        <label>Passport Number</label>
-                        <input type="text" id="passport-number-${i}" required>
+                    <div class="form-row">
+                        <div class="form-control">
+                            <label>Full Name *</label>
+                            <input type="text" id="passenger-name-${i}" required>
+                        </div>
+                        <div class="form-control">
+                            <label>Age *</label>
+                            <input type="number" id="passenger-age-${i}" min="0" max="120" required>
+                        </div>
+                        <div class="form-control">
+                            <label>Passport Number *</label>
+                            <input type="text" id="passport-number-${i}" placeholder="Enter passport number" required>
+                        </div>
                     </div>
                 </div>
             `;
         }
         container.innerHTML = html;
+        
+        // Add validation for new passenger fields
+        for (let i = 2; i <= count; i++) {
+            const passportInput = document.getElementById(`passport-number-${i}`);
+            if (passportInput) {
+                passportInput.addEventListener('input', (e) => {
+                    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                });
+            }
+            
+            const ageInput = document.getElementById(`passenger-age-${i}`);
+            if (ageInput) {
+                ageInput.addEventListener('input', (e) => {
+                    let value = parseInt(e.target.value);
+                    if (value < 0) e.target.value = 0;
+                    if (value > 120) e.target.value = 120;
+                });
+            }
+        }
     },
     
-    updateTotalPrice() {
+    async updateTotalPrice() {
         const passengerCount = document.getElementById('passenger-count');
         const flightId = sessionStorage.getItem('bookingFlightId');
         
         if (passengerCount && flightId) {
-            flightService.getFlightById(flightId).then(flight => {
+            try {
+                const flight = await flightService.getFlightById(flightId);
                 const price = flight.base_price * flight.price_multiplier;
                 const total = price * parseInt(passengerCount.value);
                 const totalPriceDiv = document.getElementById('total-price');
                 if (totalPriceDiv) {
                     totalPriceDiv.textContent = `$${total.toFixed(2)}`;
                 }
-            }).catch(error => console.error('Error calculating price:', error));
+            } catch (error) {
+                console.error('Error calculating price:', error);
+            }
         }
     },
     
     async submitBooking() {
         const flightId = sessionStorage.getItem('bookingFlightId');
         const passengerCount = parseInt(document.getElementById('passenger-count').value);
+        const submitBtn = document.getElementById('confirm-booking-btn');
+        const originalBtnText = submitBtn?.textContent;
         
         // Collect passenger information
         const passengers = [];
         
-        // Passenger 1
-        const passenger1Name = document.getElementById('passenger-name').value;
+        // Validate Passenger 1
+        const passenger1Name = document.getElementById('passenger-name').value.trim();
         const passenger1Age = document.getElementById('passenger-age').value;
-        const passenger1Passport = document.getElementById('passport-number').value;
+        const passenger1Passport = document.getElementById('passport-number').value.trim();
         
         if (!passenger1Name || !passenger1Age || !passenger1Passport) {
-            alert('Please fill in all passenger details');
+            this.showError('Please fill in all passenger details');
+            return;
+        }
+        
+        if (parseInt(passenger1Age) < 0 || parseInt(passenger1Age) > 120) {
+            this.showError('Please enter a valid age (0-120)');
+            return;
+        }
+        
+        if (passenger1Passport.length < 5) {
+            this.showError('Please enter a valid passport number');
             return;
         }
         
         passengers.push({
             full_name: passenger1Name,
             age: parseInt(passenger1Age),
-            passport_number: passenger1Passport
+            passport_number: passenger1Passport.toUpperCase()
         });
         
-        // Additional passengers
+        // Validate additional passengers
         for (let i = 2; i <= passengerCount; i++) {
-            const name = document.getElementById(`passenger-name-${i}`)?.value;
+            const name = document.getElementById(`passenger-name-${i}`)?.value.trim();
             const age = document.getElementById(`passenger-age-${i}`)?.value;
-            const passport = document.getElementById(`passport-number-${i}`)?.value;
+            const passport = document.getElementById(`passport-number-${i}`)?.value.trim();
             
             if (!name || !age || !passport) {
-                alert(`Please fill in all details for passenger ${i}`);
+                this.showError(`Please fill in all details for passenger ${i}`);
+                return;
+            }
+            
+            if (parseInt(age) < 0 || parseInt(age) > 120) {
+                this.showError(`Please enter a valid age for passenger ${i}`);
+                return;
+            }
+            
+            if (passport.length < 5) {
+                this.showError(`Please enter a valid passport number for passenger ${i}`);
                 return;
             }
             
             passengers.push({
                 full_name: name,
                 age: parseInt(age),
-                passport_number: passport
+                passport_number: passport.toUpperCase()
             });
         }
         
@@ -224,6 +346,12 @@ const Booking = {
         const flight = await flightService.getFlightById(flightId);
         const pricePerSeat = flight.base_price * flight.price_multiplier;
         const totalPrice = pricePerSeat * passengerCount;
+        
+        // Show loading state
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Processing...';
+        }
         
         // Create booking
         try {
@@ -233,17 +361,62 @@ const Booking = {
                 total_price: totalPrice
             });
             
+            this.showSuccess(`Booking successful! Your booking reference is: ${booking.booking_reference}`);
             
-            alert(`Booking successful! Your booking reference is: ${booking.booking_reference}`);
-            sessionStorage.removeItem('bookingFlightId');
-            window.App.navigateTo('my-bookings');
+            setTimeout(() => {
+                sessionStorage.removeItem('bookingFlightId');
+                window.App.navigateTo('my-bookings');
+            }, 2000);
+            
         } catch (error) {
             console.error('Booking error:', error);
-            alert('Failed to create booking. Please try again.');
+            let errorMessage = 'Failed to create booking. Please try again.';
+            if (error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            }
+            this.showError(errorMessage);
+            
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalBtnText;
+            }
         }
-        
-    }
+    },
     
+    showError(message) {
+        const existingAlert = document.querySelector('.alert-message');
+        if (existingAlert) existingAlert.remove();
+        
+        const alert = document.createElement('div');
+        alert.className = 'alert-message alert-error';
+        alert.innerHTML = `
+            <span>⚠️</span>
+            <span>${message}</span>
+            <button class="alert-close">&times;</button>
+        `;
+        
+        const form = document.getElementById('booking-form');
+        form.parentNode.insertBefore(alert, form);
+        
+        setTimeout(() => alert.remove(), 5000);
+        
+        const closeBtn = alert.querySelector('.alert-close');
+        if (closeBtn) {
+            closeBtn.onclick = () => alert.remove();
+        }
+    },
+    
+    showSuccess(message) {
+        const alert = document.createElement('div');
+        alert.className = 'alert-message alert-success';
+        alert.innerHTML = `
+            <span>✅</span>
+            <span>${message}</span>
+        `;
+        
+        const form = document.getElementById('booking-form');
+        form.parentNode.insertBefore(alert, form);
+    }
 };
 
 export default Booking;
